@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔧 发动机火花塞点火计算器</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+  .container {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 450px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 24px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+    font-size: 14px;
+  }
+  .input-group {
+    margin-bottom: 20px;
+  }
+  label {
+    display: block;
+    margin-bottom: 8px;
+    color: #555;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  input, select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 16px;
+    transition: all 0.3s;
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+  .btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+    margin-top: 10px;
+  }
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+  }
+  .btn:active {
+    transform: translateY(0);
+  }
+  .result {
+    margin-top: 25px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 15px;
+    display: none;
+  }
+  .result.show {
+    display: block;
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .result-title {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 15px;
+    text-align: center;
+  }
+  .result-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+  .result-item:last-child {
+    border-bottom: none;
+    font-weight: 700;
+    color: #667eea;
+    font-size: 18px;
+  }
+  .result-label {
+    color: #666;
+  }
+  .result-value {
+    font-weight: 600;
+    color: #333;
+  }
+  .preset-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .preset-btn {
+    padding: 8px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .preset-btn:hover {
+    background: #667eea;
+    color: white;
+  }
+  .info {
+    background: #e3f2fd;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #1976d2;
+    margin-top: 15px;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 发动机点火计算器</h1>
+    <p class="subtitle">计算火花塞总点火次数</p>
+
+    <div class="input-group">
+      <label>📌 发动机类型</label>
+      <select id="engineType" onchange="updateCylinders()">
+        <option value="4">4缸发动机（常见轿车）</option>
+        <option value="6">6缸发动机（V6/直6）</option>
+        <option value="8">8缸发动机（V8）</option>
+        <option value="3">3缸发动机（小排量）</option>
+        <option value="5">5缸发动机（少数车型）</option>
+        <option value="10">10缸发动机（V10）</option>
+        <option value="12">12缸发动机（V12/W12）</option>
+        <option value="custom">自定义缸数</option>
+      </select>
+    </div>
+
+    <div class="input-group" id="customCylindersGroup" style="display:none;">
+      <label>🔢 自定义缸数</label>
+      <input type="number" id="customCylinders" min="1" max="16" placeholder="输入缸数">
+    </div>
+
+    <div class="input-group">
+      <label>⚙️ 发动机转速 (RPM)</label>
+      <input type="number" id="rpm" value="3000" min="600" max="8000" step="100">
+      <div class="preset-buttons">
+        <button class="preset-btn" onclick="setRPM(800)">怠速 800</button>
+        <button class="preset-btn" onclick="setRPM(3000)">巡航 3000</button>
+        <button class="preset-btn" onclick="setRPM(6000)">高转 6000</button>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>⏱️ 运行时间 (分钟)</label>
+      <input type="number" id="minutes" value="1" min="0.1" max="10000" step="1">
+      <div class="preset-buttons">
+        <button class="preset-btn" onclick="setMinutes(1)">1分钟</button>
+        <button class="preset-btn" onclick="setMinutes(10)">10分钟</button>
+        <button class="preset-btn" onclick="setMinutes(60)">1小时</button>
+      </div>
+    </div>
+
+    <button class="btn" onclick="calculate()">🚀 开始计算</button>
+
+    <div class="result" id="result">
+      <div class="result-title">📊 计算结果</div>
+      <div class="result-item">
+        <span class="result-label">发动机缸数</span>
+        <span class="result-value" id="resCylinders">-</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">发动机转速</span>
+        <span class="result-value" id="resRPM">-</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">运行时间</span>
+        <span class="result-value" id="resTime">-</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">每分钟点火次数</span>
+        <span class="result-value" id="resPerMin">-</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">🔥 总点火次数</span>
+        <span class="result-value" id="resTotal">-</span>
+      </div>
+    </div>
+
+    <div class="info">
+      💡 <strong>计算原理：</strong><br>
+      4冲程发动机每个气缸每2转点火1次<br>
+      每分钟点火次数 = RPM ÷ 2 × 缸数<br>
+      总点火次数 = 每分钟点火 × 运行分钟数
+    </div>
+  </div>
+
+  <script>
+    function updateCylinders() {
+      const type = document.getElementById('engineType').value;
+      const customGroup = document.getElementById('customCylindersGroup');
+      if (type === 'custom') {
+        customGroup.style.display = 'block';
+      } else {
+        customGroup.style.display = 'none';
+      }
+    }
+
+    function setRPM(val) {
+      document.getElementById('rpm').value = val;
+    }
+
+    function setMinutes(val) {
+      document.getElementById('minutes').value = val;
+    }
+
+    function formatNumber(num) {
+      if (num >= 100000000) {
+        return (num / 100000000).toFixed(2) + ' 亿';
+      } else if (num >= 10000) {
+        return (num / 10000).toFixed(2) + ' 万';
+      } else if (num >= 1000) {
+        return num.toLocaleString('zh-CN');
+      }
+      return num.toString();
+    }
+
+    function calculate() {
+      const engineType = document.getElementById('engineType').value;
+      let cylinders;
+      
+      if (engineType === 'custom') {
+        cylinders = parseInt(document.getElementById('customCylinders').value);
+        if (!cylinders || cylinders < 1 || cylinders > 16) {
+          alert('请输入有效的缸数（1-16）');
+          return;
+        }
+      } else {
+        cylinders = parseInt(engineType);
+      }
+
+      const rpm = parseFloat(document.getElementById('rpm').value);
+      const minutes = parseFloat(document.getElementById('minutes').value);
+
+      if (!rpm || rpm < 600 || rpm > 8000) {
+        alert('请输入有效的转速（600-8000 RPM）');
+        return;
+      }
+
+      if (!minutes || minutes <= 0) {
+        alert('请输入有效的时间（>0）');
+        return;
+      }
+
+      // 计算
+      const firesPerCylinderPerMin = rpm / 2;  // 4-stroke
+      const firesPerMin = firesPerCylinderPerMin * cylinders;
+      const totalFires = firesPerMin * minutes;
+
+      // 显示结果
+      document.getElementById('resCylinders').textContent = cylinders + ' 缸';
+      document.getElementById('resRPM').textContent = rpm.toLocaleString('zh-CN') + ' RPM';
+      document.getElementById('resTime').textContent = minutes >= 60 
+        ? (minutes / 60).toFixed(1) + ' 小时' 
+        : minutes + ' 分钟';
+      document.getElementById('resPerMin').textContent = formatNumber(Math.round(firesPerMin)) + ' 次/分钟';
+      document.getElementById('resTotal').textContent = formatNumber(Math.round(totalFires)) + ' 次';
+
+      document.getElementById('result').classList.add('show');
+    }
+
+    // 回车键触发计算
+    document.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') calculate();
+    });
+  </script>
+</body>
+</html>
